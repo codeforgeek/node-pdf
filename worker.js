@@ -1,24 +1,25 @@
-const kue = require("kue");
-const queue = kue.createQueue();
+const bull = require("bull");
+const queue = new bull('pdf-generation');
 const pdfKit = require('pdfkit');
 const fs = require('fs');
 
 function startProcess() {
     // listen to the queue
     // start processing email
-    queue.process('invoice', (job,done) => {
+    queue.process((job) => {
         // on each request generate the pdf
-        generatePdfInvoice(job.data, done);
+        console.log(`Processing Job with id ${job.id}`);
+        generatePdfInvoice(job.data);
     });
 }
 
-function generatePdfInvoice(data, done) {
+function generatePdfInvoice(data) {
     let doc = new pdfKit;
     doc.pipe(fs.createWriteStream(`${__dirname}/invoice/${data.title}.pdf`));
     doc.fontSize(14).text(data.template, 100, 100);
-    doc.end();
-    done();
+    doc.end();    
+    console.log(`Generated PDF document`);
 }
 
 startProcess();
-kue.app.listen(4000);
+console.log('Worker running');

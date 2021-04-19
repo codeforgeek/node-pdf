@@ -1,19 +1,15 @@
-const kue = require('kue');
+const bull = require('bull');
 const invoice = require('./invoice');
-const queue = kue.createQueue();
+const queue = new bull('pdf-generation');
 
 function startJob() {
     let invoiceData = invoice.content;
-    invoiceData.forEach((singleInvoice) => {
+    invoiceData.forEach(async (singleInvoice) => {
         // push data in queue
-        let job = queue.create('invoice', {
+        let job = await queue.add({
             title: `Generate invoice ${singleInvoice.index}`,
             template: singleInvoice.text,
-        }).delay(5000).priority('high').save((err) => {
-            if(!err) {
-                console.log('Job added...'+job.id);
-            }
-        });
+        }, {'delay': 1000});
     });
 }
 
